@@ -336,3 +336,106 @@ for i, col in enumerate(columns):
 plt.suptitle('High Risk Dataset', fontweight='bold', fontsize=20)
 plt.tight_layout()
 plt.show()
+
+#%% - distribution of TSH Level in each risk level
+
+
+
+fontsize_label = 15
+fontsize_legend = 10
+fontsize_title = 20
+
+sns.set(style='whitegrid')
+
+# Create box plot
+plt.figure(figsize=(12, 8))
+sns.boxplot(data=df, x='Thyroid_Cancer_Risk', y='TSH_Level', hue = 'Thyroid_Cancer_Risk')
+
+plt.axhspan(0, 0.4, color='red', alpha=0.2, label='Overactive Thyroid (TSH < 0.4)')  # Shaded area for overactive thyroid
+plt.axhspan(0.4, 4.0, color='green', alpha=0.2, label='Normal TSH Range (0.4 - 4.0)')  # Shaded area for normal range
+plt.axhspan(4.0, df['TSH_Level'].max(), color='orange', alpha=0.2, label='Underactive Thyroid (TSH > 4.0)')  # Shaded area for underactive thyroid
+
+# Customize labels and title
+plt.xlabel('Thyroid Cancer Risk', fontsize=12)
+plt.ylabel('TSH Level', fontsize=12)
+plt.title('Boxplot of TSH Level by Thyroid Cancer Risk', fontsize=15)
+
+plt.legend(title='Thyroid Cancer Risk', fontsize=10, title_fontsize=12, loc='upper right')
+
+
+# Show plot
+plt.tight_layout()
+plt.show()
+
+#%%
+
+# Create categories based on TSH_Level
+conditions = [
+    (df['TSH_Level'] < 0.4),    # Overactive thyroid
+    (df['TSH_Level'] >= 0.4) & (df['TSH_Level'] <= 4.0),  # Normal range
+    (df['TSH_Level'] > 4.0)     # Underactive thyroid
+]
+
+choices = ['Overactive Thyroid', 'Normal TSH Range', 'Underactive Thyroid']
+
+# Create a new column with the categories
+df['TSH_Category'] = np.select(conditions, choices, default='Normal')
+
+# Count the occurrences in each category
+category_counts = df['TSH_Category'].value_counts()
+
+# Plotting the pie chart
+plt.figure(figsize=(8, 8))
+plt.pie(category_counts, labels=category_counts.index, autopct='%1.1f%%', colors=['#ff9999', '#66b3ff', '#99ff99'], startangle=90)
+plt.title('Distribution of TSH Levels')
+plt.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+plt.show()
+
+
+#%%
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Create categories based on TSH_Level
+conditions = [
+    (df['TSH_Level'] < 0.4),    # Overactive thyroid
+    (df['TSH_Level'] >= 0.4) & (df['TSH_Level'] <= 4.0),  # Normal range
+    (df['TSH_Level'] > 4.0)     # Underactive thyroid
+]
+
+choices = ['Overactive Thyroid', 'Normal TSH Range', 'Underactive Thyroid']
+
+# Create a new column with the categories
+df['TSH_Category'] = np.select(conditions, choices, default='Normal')
+
+# Count the occurrences in each TSH Category
+category_counts = df['TSH_Category'].value_counts()
+
+# Create a new column based on Thyroid Cancer Risk for each TSH category
+df['TSH_Cancer_Risk_Distribution'] = df.groupby('TSH_Category')['Thyroid_Cancer_Risk'].transform(lambda x: x.value_counts(normalize=True))
+
+# Create a count of Thyroid Cancer Risk distribution for each TSH Category
+cancer_risk_counts = df.groupby(['TSH_Category', 'Thyroid_Cancer_Risk']).size().unstack(fill_value=0)
+
+# Plotting the dual pie charts
+fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+
+# First Pie Chart for TSH Level Distribution
+axes[0].pie(category_counts, labels=category_counts.index, autopct='%1.1f%%', colors=['#ff9999', '#66b3ff', '#99ff99'], startangle=90)
+axes[0].set_title('Distribution of TSH Levels', fontsize=14)
+axes[0].axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+
+# Second Pie Chart for Thyroid Cancer Risk Distribution within each TSH Category
+for i, category in enumerate(category_counts.index):
+    axes[1].pie(cancer_risk_counts.loc[category], labels=cancer_risk_counts.columns, autopct='%1.1f%%',
+                startangle=90, radius=0.75, colors=['#ffcccc', '#ffcc99', '#99ffcc'], wedgeprops=dict(width=0.3))
+    axes[1].set_title(f'Thyroid Cancer Risk for {category} TSH Levels', fontsize=12)
+
+# Show the plot
+plt.tight_layout()
+plt.show()
+
+
+
+
