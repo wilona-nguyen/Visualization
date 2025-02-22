@@ -5,6 +5,7 @@ from sklearn.utils import resample
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+import plotly.express as px
 #%%
 url = 'https://raw.githubusercontent.com/wilona-nguyen/Visualization/refs/heads/main/Final%20Poject/thyroid_cancer_risk_data.csv'
 
@@ -73,8 +74,39 @@ plt.ylabel('Count')
 # Show plot
 plt.show()
 
+#%%
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Group by Thyroid_Risk_Cancer and Gender, and count occurrences
+grouped = df.groupby(['Thyroid_Cancer_Risk', 'Gender']).size().unstack()
+
+# Create subplots
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+# Define the risk categories
+risk_categories = ['Low', 'Medium', 'High']
+
+# Create a pie chart for each risk category
+for i, risk in enumerate(risk_categories):
+    if risk in grouped.index:
+        data = grouped.loc[risk]
+        axes[i].pie(data,
+                    labels=data.index,
+                    autopct='%1.1f%%',
+                    startangle=90,
+                    colors=['lightcoral', 'lightblue'],
+                    textprops={'fontsize': 15})
+        axes[i].set_title(f'{risk} Thyroid Cancer Risk', fontsize = 15)
+
+plt.suptitle('Gender Distribution for Each Thyroid Cancer Risk Level', fontweight = 'bold', fontsize = 20)
+plt.subplots_adjust(top=0.2)
+plt.tight_layout()
+plt.show()
+
+
 #%% - Country distribution
-sns.set(style="whitegrid")
+sns.set_theme(style="whitegrid")
 
 country_order = df['Country'].value_counts().index
 
@@ -96,6 +128,44 @@ for p in ax.patches:
 
 # Show plot
 plt.show()
+
+#%%
+
+fig = px.sunburst(df, path=['Thyroid_Cancer_Risk', 'Country'], values='Age')
+fig.show()
+
+#%% - Distribution of cancer risk level for each country
+df_count = df.groupby(['Country', 'Thyroid_Cancer_Risk']).size().unstack(fill_value=0)
+
+# Sort countries by the total count (sum of all risk categories) in descending order
+df_count = df_count.loc[df_count.sum(axis=1).sort_values(ascending=False).index]
+
+# Plot stacked bar chart with 'muted' color palette
+ax = df_count.plot(kind='bar', stacked=True, figsize=(10, 6))
+ax.set_ylabel('Count')
+ax.set_title('Thyroid Cancer Risk by Country')
+plt.xticks(rotation=30)
+plt.show()
+
+
+#%% - Age distribution
+
+sns.histplot(df['Age'], bins=20)
+plt.title('Age Distribution')
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.show()
+
+
+#%%
+
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='Thyroid_Cancer_Risk', y='Age', data=df)
+plt.title('Age Distribution by Thyroid Cancer Risk')
+plt.xlabel('Thyroid Cancer Risk')
+plt.ylabel('Age')
+plt.show()
+
 
 #%% - Ethnicity distribution
 sns.set(style="whitegrid")
@@ -240,28 +310,45 @@ df_high_risk = df[df['Thyroid_Cancer_Risk'] == 'High']
 df_high_risk.shape
 
 #%% - country distribution in High risk
-sns.set(style="whitegrid")
 
-country_order = df_high_risk['Country'].value_counts().index
+import squarify
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# Create the count plot
-plt.figure(figsize=(10, 7))
-ax = sns.countplot(x='Country', hue = 'Country', data=df_high_risk, palette='muted', order = country_order)
+# Get country counts
+country_counts = df_high_risk['Country'].value_counts()
+
+# Define colors using a seaborn palette
+colors = sns.color_palette("muted", len(country_counts))
+
+# Create labels with country names and counts
+labels = [f'{country}\n{count}' for country, count in zip(country_counts.index, country_counts.values)]
+
+# Create the treemap
+plt.figure(figsize=(14, 10))
+squarify.plot(
+    sizes=country_counts.values,
+    label=labels,
+    color=colors,
+    alpha=0.7,
+    text_kwargs={'fontsize': 15, 'weight': 'bold'}
+)
+
+# Add borders by overlaying white lines
+norm_sizes = squarify.normalize_sizes(country_counts.values, 100, 100)
+rects = squarify.squarify(norm_sizes, 0, 0, 100, 100)
+for rect in rects:
+    plt.gca().add_patch(plt.Rectangle((rect['x'], rect['y']), rect['dx'], rect['dy'],
+                                      edgecolor='white', linewidth=3, fill=False))
 
 # Customize plot
-plt.title('Country Distribution in the High Risk Dataset')
-plt.xlabel('Country')
-plt.ylabel('Count')
-
-# Add counts on top of each bar
-for p in ax.patches:
-    ax.annotate(f'{int(p.get_height())}',
-                (p.get_x() + p.get_width() / 2., p.get_height()),
-                ha='center', va='center', fontsize=10, color='black', xytext=(0, 5),
-                textcoords='offset points')
+plt.title('Country Distribution in the High Risk Dataset', fontsize=20, fontweight = 'bold', pad = 30)
+plt.axis('off')  # Hide axis
 
 # Show plot
 plt.show()
+
+
 
 #%% - Ethnicity distribution in high risk
 sns.set(style="whitegrid")
@@ -273,7 +360,7 @@ plt.figure(figsize=(10, 7))
 ax = sns.countplot(x='Ethnicity', hue = 'Ethnicity', data=df_high_risk, palette='muted', order = country_order)
 
 # Customize plot
-plt.title('Ethnicity Distribution in the High Risk Dataset')
+plt.title('Ethnicity Distribution in the High Risk Dataset', fontweight = 'bold', fontsize = 20)
 plt.xlabel('Ethnicity')
 plt.ylabel('Count')
 
@@ -312,8 +399,13 @@ for p in ax.patches:
 # Show plot
 plt.show()
 
-#%%
-fontsize_label = 12
+#%% - Health background distribution
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Define your label sizes
+fontsize_label = 15
 fontsize_title = 15
 
 # Create subplots
@@ -323,12 +415,19 @@ axes = axes.flatten()  # Flatten the axes to easily iterate
 # List of columns to plot
 columns = ['Family_History', 'Radiation_Exposure', 'Iodine_Deficiency', 'Smoking', 'Obesity', 'Diabetes']
 
+# Define the order for the 'Yes' and 'No' categories
+yes_no_order = ['Yes', 'No']
+
+# Ensure each column is categorical with the desired order
+for col in columns:
+    df_high_risk[col] = pd.Categorical(df_high_risk[col], categories=yes_no_order, ordered=True)
+
 # Plot each distribution in a subplot
 for i, col in enumerate(columns):
-    sns.histplot(df_high_risk[col], ax=axes[i])  # You can use kde=False for only histograms
+    sns.histplot(df_high_risk[col], ax=axes[i], discrete=True)
     axes[i].set_title(f'Distribution of {col}', fontsize=fontsize_title)
-    axes[i].set_xlabel(col, fontsize = fontsize_label)
-    axes[i].set_ylabel('Frequency', fontsize = fontsize_label)
+    axes[i].set_xlabel(col, fontsize=fontsize_label)
+    axes[i].set_ylabel('Frequency', fontsize=fontsize_label)
 
     axes[i].tick_params(axis='x', labelsize=12)
 
@@ -336,6 +435,7 @@ for i, col in enumerate(columns):
 plt.suptitle('High Risk Dataset', fontweight='bold', fontsize=20)
 plt.tight_layout()
 plt.show()
+
 
 #%% - distribution of TSH Level in each risk level
 
@@ -393,9 +493,7 @@ plt.show()
 
 
 #%%
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+
 
 # Create categories based on TSH_Level
 conditions = [
@@ -436,6 +534,82 @@ for i, category in enumerate(category_counts.index):
 plt.tight_layout()
 plt.show()
 
+
+#%% - Dsitribution of High, Medium, Low risk
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Bar plot for the distribution of Thyroid_Cancer_Risk
+plt.figure(figsize=(8, 6))
+sns.countplot(x='Thyroid_Cancer_Risk', data=df, palette='muted')
+
+plt.title('Distribution of Thyroid Cancer Risk')
+plt.xlabel('Thyroid Cancer Risk')
+plt.ylabel('Count')
+plt.show()
+
+
+#%%-getiinf data on T3 adn T4 level
+
+df_low_risk = df[df['Thyroid_Cancer_Risk'] == 'Low']
+
+#%%
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Define your label sizes
+fontsize_label = 15
+fontsize_title = 15
+
+# Create subplots
+fig, axes = plt.subplots(2, 3, figsize=(18, 10))  # Adjust rows and columns based on your plot count
+axes = axes.flatten()  # Flatten the axes to easily iterate
+
+# List of columns to plot
+columns = ['Family_History', 'Radiation_Exposure', 'Iodine_Deficiency', 'Smoking', 'Obesity', 'Diabetes']
+
+# Define the order for the 'Yes' and 'No' categories
+yes_no_order = ['Yes', 'No']
+
+# Ensure each column is categorical with the desired order
+for col in columns:
+    df_low_risk[col] = pd.Categorical(df_low_risk[col], categories=yes_no_order, ordered=True)
+
+# Plot each distribution in a subplot
+for i, col in enumerate(columns):
+    sns.histplot(df_low_risk[col], ax=axes[i], discrete=True)
+    axes[i].set_title(f'Distribution of {col}', fontsize=fontsize_title)
+    axes[i].set_xlabel(col, fontsize=fontsize_label)
+    axes[i].set_ylabel('Frequency', fontsize=fontsize_label)
+    axes[i].tick_params(axis='x', labelsize=12)
+
+# Adjust layout
+plt.suptitle('Low Risk Dataset', fontweight='bold', fontsize=20)
+plt.tight_layout()
+plt.show()
+
+
+#%% - Heatmap
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Assuming df has columns: 'TSH_Level', 'T3_Level', and 'T4_Level'
+
+# Calculate the correlation matrix
+correlation_matrix = df[['TSH_Level', 'T3_Level', 'T4_Level', 'Nodule_Size']].corr()
+
+# Create the heatmap
+plt.figure(figsize=(8, 6))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.5f',
+            cbar=True, square=True, linewidths=0.5, linecolor='black')
+
+# Title of the plot
+plt.title('Correlation Heatmap of TSH_Level, T3_Level, T4_Level, and Nodule_Size', fontsize=15, pad=15)
+
+# Display the plot
+plt.show()
 
 
 
