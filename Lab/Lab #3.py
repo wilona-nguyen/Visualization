@@ -67,7 +67,7 @@ agg_df[columns] = agg_df[columns].apply(pd.to_numeric)
 x = PrettyTable()
 x.field_names = ['', 'Sales ($)', 'Quantity', 'Discounts ($)', 'Profit ($)']
 
-x.add_rows(agg_df.values)
+x.add_rows(agg_df.values.tolist())
 
 max_values = []
 min_values = []
@@ -89,6 +89,8 @@ x.add_row(["Minimum feature"] + [agg_df['Category'].iloc[i] for i in min_feature
 x.float_format = '.2'
 
 print(x.get_string(title="Super store - Category"))
+
+
 
 #%%
 #Q4
