@@ -1,11 +1,13 @@
 #%%
 import pandas as pd
 import numpy as np
-from sklearn.utils import resample
-
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
+
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
 #%%
 url = 'https://raw.githubusercontent.com/wilona-nguyen/Visualization/refs/heads/main/Final%20Poject/thyroid_cancer_risk_data.csv'
 
